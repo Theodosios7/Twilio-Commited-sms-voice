@@ -1,1 +1,2 @@
-web: gunicorn app:app
+web: gunicorn twilio_commited_pricing_sms:app
+
