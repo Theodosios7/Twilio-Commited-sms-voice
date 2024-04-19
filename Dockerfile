@@ -19,5 +19,5 @@ EXPOSE 80
 # Define environment variable
 ENV NAME World
 
-# Run app.py when the container launches
-CMD ["python", "app.py"]
+# Run twilio_commited_pricing_sms.py when the container launches
+CMD ["python", "twilio_commited_pricing_sms.py"]
