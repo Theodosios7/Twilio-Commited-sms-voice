@@ -73,15 +73,26 @@ def run_optimization(sms_usage_input, voice_usage_input, budget_input):
     }
 
 # Define API endpoint
-@app.route('/optimize', methods=['POST'])
+@app.route('/optimize', methods=['GET', 'POST'])
 def optimize():
-    data = request.get_json()  # Ensure you parse JSON data correctly
-    sms_usage = data.get('sms_usage')
-    voice_usage = data.get('voice_usage')
-    budget = data.get('budget')
-    
-    results = run_optimization(sms_usage, voice_usage, budget)
-    return jsonify(results)
+    try:
+        if request.method == 'GET':
+            sms_usage = int(request.args.get('sms_usage', 0))
+            voice_usage = int(request.args.get('voice_usage', 0))
+            budget = float(request.args.get('budget', 0))
+        elif request.method == 'POST':
+            sms_usage = int(request.form.get('sms_usage', 0))
+            voice_usage = int(request.form.get('voice_usage', 0))
+            budget = float(request.form.get('budget', 0))
+
+        # You might want to add additional checks to ensure values are within a sensible range
+        if sms_usage < 0 or voice_usage < 0 or budget < 0:
+            raise ValueError("Negative values are not allowed.")
+
+        results = run_optimization(sms_usage, voice_usage, budget)
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 if __name__ == '__main__':
     app.run(debug=True)  # Set debug to False for production
