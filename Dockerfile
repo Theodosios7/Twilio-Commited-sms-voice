@@ -20,5 +20,6 @@ EXPOSE 80
 ENV NAME World
 
 # Run twilio_commited_pricing_sms.py when the container launches
-CMD gunicorn --bind 0.0.0.0:$PORT twilio_commited_pricing_sms.py:app
+CMD ["gunicorn", "--bind", "0.0.0.0:$PORT", "twilio_commited_pricing_sms:app"]
+
 
