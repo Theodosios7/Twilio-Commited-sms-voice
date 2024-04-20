@@ -1,12 +1,14 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from pyomo.environ import *
+from pyomo.environ import ConcreteModel, Var, NonNegativeIntegers, Binary, Objective, minimize, Constraint, value
 from pyomo.opt import SolverFactory
 import os
 
+# Initialize Flask application
 app = Flask(__name__)
-CORS(app)  # Enable Cross-Origin Resource Sharing
+CORS(app)  # Enable CORS for all domains
 
+# Function to run the optimization model
 def run_optimization(sms_usage, voice_usage, budget):
     model = ConcreteModel()
 
@@ -20,7 +22,7 @@ def run_optimization(sms_usage, voice_usage, budget):
         6: {'min_messages': 1000001, 'max_messages': float('inf'), 'price_outbound': 0.0069, 'price_inbound': 0.0069}
     }
 
-    # Decision variables for SMS
+    # Define decision variables for SMS
     model.sms_usage = Var(sms_tiers.keys(), domain=NonNegativeIntegers)
     model.use_committed_sms = Var(domain=Binary)
     committed_sms_discount = 0.95
@@ -34,7 +36,7 @@ def run_optimization(sms_usage, voice_usage, budget):
         'bring_your_own': {'monthly_cost': 0.5, 'setup_fee': 0}
     }
 
-    # Decision variables for phone numbers
+    # Define decision variables for phone numbers
     for phone_type in phone_number_pricing:
         model.add_component(f"{phone_type}_selected", Var(domain=Binary))
 
@@ -44,7 +46,7 @@ def run_optimization(sms_usage, voice_usage, budget):
     model.voice_usage = voice_usage
     model.use_committed_voice = Var(domain=Binary)
 
-    # Objective Function: Minimize total cost
+    # Objective Function to minimize total cost
     def total_cost_rule(model):
         sms_cost = sum(model.sms_usage[tier] * sms_tiers[tier]['price_outbound'] for tier in sms_tiers)
         voice_cost = (regular_cost_per_voice * (1 - model.use_committed_voice) + committed_cost_per_voice * model.use_committed_voice) * model.voice_usage
@@ -54,9 +56,10 @@ def run_optimization(sms_usage, voice_usage, budget):
     # Budget constraint
     model.budget_constraint = Constraint(expr=model.total_cost <= budget)
 
-    # Solver setup and execution
+    # Solve the model
     solver = SolverFactory('glpk')
-    solver.solve(model)
+    solution = solver.solve(model, tee=True)
+    model.solutions.load_from(solution)
 
     # Output decisions and total cost
     results = {
@@ -83,4 +86,4 @@ def optimize():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)  # Change debug to False for production environments
+    app.run(host='0.0.0.0', port=port, debug=False)
