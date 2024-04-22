@@ -27,25 +27,12 @@ def run_optimization(sms_usage, voice_usage, budget):
         6: {'min_messages': 1000001, 'max_messages': float('inf'), 'price_outbound': 0.0069, 'price_inbound': 0.0069}
     }
 
-    # Define decision variables for SMS
+    # Decision variables for SMS usage
     model.sms_usage = Var(sms_tiers.keys(), domain=NonNegativeIntegers)
     model.use_committed_sms = Var(domain=Binary)
-    committed_sms_discount = 0.95
+    committed_sms_discount = 0.95  # Discount factor for committing to SMS plans
 
-    # Phone number pricing
-    phone_number_pricing = {
-        'long_codes': {'monthly_cost': 1.15, 'setup_fee': 0},
-        'toll_free': {'monthly_cost': 2.15, 'setup_fee': 0},
-        'random_short_code': {'monthly_cost': 1000 / 3, 'setup_fee': 500},
-        'vanity_short_code': {'monthly_cost': 1500 / 3, 'setup_fee': 500},
-        'bring_your_own': {'monthly_cost': 0.5, 'setup_fee': 0}
-    }
-
-    # Define decision variables for phone numbers
-    for phone_type in phone_number_pricing:
-        model.add_component(f"{phone_type}_selected", Var(domain=Binary))
-
-    # Variables and parameters for voice calls
+    # Decision variables for voice
     regular_cost_per_voice = 0.014
     committed_cost_per_voice = 0.01
     model.voice_usage = voice_usage
@@ -53,8 +40,11 @@ def run_optimization(sms_usage, voice_usage, budget):
 
     # Objective Function to minimize total cost
     def total_cost_rule(model):
-        sms_cost = sum(model.sms_usage[tier] * sms_tiers[tier]['price_outbound'] for tier in sms_tiers)
-        voice_cost = (regular_cost_per_voice * (1 - model.use_committed_voice) + committed_cost_per_voice * model.use_committed_voice) * model.voice_usage
+        sms_cost = sum((model.sms_usage[tier] * sms_tiers[tier]['price_outbound'] * (1 - model.use_committed_sms) + 
+                        model.sms_usage[tier] * sms_tiers[tier]['price_outbound'] * committed_sms_discount * model.use_committed_sms)
+                       for tier in sms_tiers)
+        voice_cost = (regular_cost_per_voice * (1 - model.use_committed_voice) + 
+                      committed_cost_per_voice * model.use_committed_voice) * model.voice_usage
         return sms_cost + voice_cost
     model.total_cost = Objective(rule=total_cost_rule, sense=minimize)
 
