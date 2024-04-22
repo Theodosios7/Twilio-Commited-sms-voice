@@ -52,7 +52,7 @@ def run_optimization(sms_usage, voice_usage, budget):
     model.budget_constraint = Constraint(expr=model.total_cost <= budget)
 
     # Solve the model
-    solver = SolverFactory('glpk')
+    solver = SolverFactory('ipopt')
     solution = solver.solve(model, tee=True)
 
     # Output decisions and total cost
