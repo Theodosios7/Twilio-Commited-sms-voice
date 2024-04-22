@@ -8,6 +8,11 @@ import os
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all domains
 
+# Home route for basic API check
+@app.route('/')
+def home():
+    return "Welcome to the API!"
+
 # Function to run the optimization model
 def run_optimization(sms_usage, voice_usage, budget):
     model = ConcreteModel()
