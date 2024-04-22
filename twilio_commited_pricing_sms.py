@@ -51,14 +51,6 @@ def run_optimization(sms_usage, voice_usage, budget):
     model.voice_usage = voice_usage
     model.use_committed_voice = Var(domain=Binary)
 
-    # Budget constraint
-    model.budget_constraint = Constraint(expr=model.total_cost <= budget)
-    
-    # Constraint for selecting the most cost-effective solution
-    def most_cost_effective_rule(model):
-        return model.total_cost == min(model.total_cost for model in model.solutions)
-    model.most_cost_effective_constraint = Constraint(rule=most_cost_effective_rule)
-
     # Objective Function to minimize total cost
     def total_cost_rule(model):
         sms_cost = sum(model.sms_usage[tier] * sms_tiers[tier]['price_outbound'] for tier in sms_tiers)
@@ -66,11 +58,12 @@ def run_optimization(sms_usage, voice_usage, budget):
         return sms_cost + voice_cost
     model.total_cost = Objective(rule=total_cost_rule, sense=minimize)
 
+    # Budget constraint
+    model.budget_constraint = Constraint(expr=model.total_cost <= budget)
 
     # Solve the model
     solver = SolverFactory('glpk')
     solution = solver.solve(model, tee=True)
-    model.solutions.load_from(solution)
 
     # Output decisions and total cost
     results = {
