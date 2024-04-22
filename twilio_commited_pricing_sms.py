@@ -58,6 +58,12 @@ def run_optimization(sms_usage, voice_usage, budget):
         return sms_cost + voice_cost
     model.total_cost = Objective(rule=total_cost_rule, sense=minimize)
 
+    # Constraint for selecting the most cost-effective solution
+    # Constraint for selecting the most cost-effective solution
+    def most_cost_effective_rule(model):
+        return model.total_cost == min(model.total_cost for model in model.solutions)
+    model.most_cost_effective_constraint = Constraint(rule=most_cost_effective_rule)
+
     # Budget constraint
     model.budget_constraint = Constraint(expr=model.total_cost <= budget)
 
