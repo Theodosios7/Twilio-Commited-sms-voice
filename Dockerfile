@@ -16,10 +16,10 @@ RUN apt-get update && apt-get install -y \
     liblapack-dev \
     && wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /miniconda.sh \
     && bash /miniconda.sh -b -p /miniconda \
-    && conda install -c conda-forge ipopt \
+    && /miniconda/bin/conda install -c conda-forge ipopt -y \
     && rm -rf /var/lib/apt/lists/* /miniconda.sh
 
-# Set Conda to PATH
+# Set PATH environment variable to include the Miniconda bin directory
 ENV PATH="/miniconda/bin:${PATH}"
 
 # Copy the current directory contents into the container at /app
