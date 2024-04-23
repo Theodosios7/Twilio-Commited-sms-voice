@@ -35,4 +35,5 @@ EXPOSE $PORT
 ENV NAME World
 
 # Run your application
-CMD ["gunicorn", "--bind", "0.0.0.0:$PORT", "twilio_commited_pricing_sms:app"]
+CMD gunicorn --bind 0.0.0.0:$PORT twilio_commited_pricing_sms:app
+
